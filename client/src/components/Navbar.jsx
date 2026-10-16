@@ -7,7 +7,9 @@ import {
   Users, 
   BookOpen, 
   Sparkles,
-  UserCheck
+  UserCheck,
+  LogOut,
+  LogIn
 } from 'lucide-react';
 
 export default function Navbar({ 
@@ -16,7 +18,9 @@ export default function Navbar({
   currentUser, 
   allUsers, 
   onSwitchUser, 
-  onOpenCreateModal 
+  onOpenCreateModal,
+  onOpenLogin,
+  onLogout
 }) {
   return (
     <header className="topbar">
@@ -97,9 +101,9 @@ export default function Navbar({
           </select>
         </div>
 
-        {/* Current User Pill */}
-        {currentUser && (
-          <div className="user-badge">
+        {/* Current User Pill or Sign In Button */}
+        {currentUser ? (
+          <div className="user-badge" title="Click to view login options">
             <div 
               className="avatar-circle"
               style={{ backgroundColor: currentUser.avatar_color || '#4f46e5' }}
@@ -112,7 +116,20 @@ export default function Navbar({
                 {currentUser.role}
               </span>
             </div>
+            <button 
+              className="btn btn-secondary btn-sm"
+              onClick={onLogout}
+              title="Log out and return to Login Screen"
+              style={{ padding: '6px 8px', marginLeft: '6px' }}
+            >
+              <LogOut size={14} />
+            </button>
           </div>
+        ) : (
+          <button className="btn btn-secondary" onClick={onOpenLogin}>
+            <LogIn size={16} />
+            <span>Sign In</span>
+          </button>
         )}
 
         <button className="btn btn-primary" onClick={onOpenCreateModal}>
