@@ -20,6 +20,7 @@ import {
   Play,
   RotateCcw
 } from 'lucide-react';
+import api from '../services/api';
 
 export default function TicketDetailModal({ 
   ticketId, 
@@ -55,9 +56,8 @@ export default function TicketDetailModal({
   // Fetch full ticket details
   const fetchTicketDetails = async () => {
     try {
-      const res = await fetch(`/api/tickets/${ticketId}`);
-      if (res.ok) {
-        const data = await res.json();
+      const data = await api.getTicket(ticketId);
+      if (data) {
         setTicket(data);
         setSelectedTeamId(data.team_id || '');
         setSelectedAgentId(data.assigned_to_id || '');
@@ -82,21 +82,15 @@ export default function TicketDetailModal({
 
     setSendingMessage(true);
     try {
-      const res = await fetch(`/api/tickets/${ticketId}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: currentUser.id,
-          message: newMessage.trim(),
-          is_internal: isInternal ? 1 : 0
-        })
+      await api.postMessage(ticketId, {
+        user_id: currentUser.id,
+        message: newMessage.trim(),
+        is_internal: isInternal ? 1 : 0
       });
 
-      if (res.ok) {
-        setNewMessage('');
-        fetchTicketDetails();
-        onRefresh();
-      }
+      setNewMessage('');
+      fetchTicketDetails();
+      onRefresh();
     } catch (err) {
       console.error('Failed to post message:', err);
     } finally {
@@ -107,20 +101,14 @@ export default function TicketDetailModal({
   // Handle Assignment
   const handleAssign = async () => {
     try {
-      const res = await fetch(`/api/tickets/${ticketId}/assign`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          team_id: selectedTeamId ? Number(selectedTeamId) : null,
-          assigned_to_id: selectedAgentId ? Number(selectedAgentId) : null,
-          updated_by_id: currentUser.id
-        })
+      await api.assignTicket(ticketId, {
+        team_id: selectedTeamId ? Number(selectedTeamId) : null,
+        assigned_to_id: selectedAgentId ? Number(selectedAgentId) : null,
+        updated_by_id: currentUser.id
       });
 
-      if (res.ok) {
-        fetchTicketDetails();
-        onRefresh();
-      }
+      fetchTicketDetails();
+      onRefresh();
     } catch (err) {
       console.error('Failed to assign ticket:', err);
     }
@@ -129,22 +117,16 @@ export default function TicketDetailModal({
   // Handle Status Update
   const handleStatusChange = async (newStatus, notes = null) => {
     try {
-      const res = await fetch(`/api/tickets/${ticketId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: newStatus,
-          resolution_notes: notes,
-          updated_by_id: currentUser.id
-        })
+      await api.updateStatus(ticketId, {
+        status: newStatus,
+        resolution_notes: notes,
+        updated_by_id: currentUser.id
       });
 
-      if (res.ok) {
-        setResolving(false);
-        setResolutionNotes('');
-        fetchTicketDetails();
-        onRefresh();
-      }
+      setResolving(false);
+      setResolutionNotes('');
+      fetchTicketDetails();
+      onRefresh();
     } catch (err) {
       console.error('Failed to update status:', err);
     }
@@ -175,20 +157,14 @@ export default function TicketDetailModal({
   const handleCsatSubmit = async () => {
     setSubmittingCsat(true);
     try {
-      const res = await fetch(`/api/tickets/${ticketId}/csat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          rating: csatRating,
-          feedback: csatFeedback,
-          user_id: currentUser.id
-        })
+      await api.submitCsat(ticketId, {
+        rating: csatRating,
+        feedback: csatFeedback,
+        user_id: currentUser.id
       });
 
-      if (res.ok) {
-        fetchTicketDetails();
-        onRefresh();
-      }
+      fetchTicketDetails();
+      onRefresh();
     } catch (err) {
       console.error('Failed to submit CSAT:', err);
     } finally {

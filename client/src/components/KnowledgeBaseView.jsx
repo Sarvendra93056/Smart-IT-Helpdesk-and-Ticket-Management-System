@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Search, CheckCircle2, Copy, Check, Terminal, ExternalLink } from 'lucide-react';
 
+import api from '../services/api';
+
 export default function KnowledgeBaseView() {
   const [articles, setArticles] = useState([]);
   const [search, setSearch] = useState('');
@@ -10,15 +12,8 @@ export default function KnowledgeBaseView() {
 
   const fetchArticles = async () => {
     try {
-      let url = '/api/kb';
-      const params = new URLSearchParams();
-      if (selectedCategory !== 'all') params.append('category', selectedCategory);
-      if (search) params.append('search', search);
-      if (params.toString()) url += `?${params.toString()}`;
-
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
+      const data = await api.getKB({ category: selectedCategory, search });
+      if (data) {
         setArticles(data);
       }
     } catch (err) {

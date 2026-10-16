@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Shield, Headphones, Laptop, Wifi, KeyRound, Sparkles, AlertCircle } from 'lucide-react';
 
+import api from '../services/api';
+
 export default function TeamsView() {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -8,9 +10,8 @@ export default function TeamsView() {
   useEffect(() => {
     const fetchTeams = async () => {
       try {
-        const res = await fetch('/api/teams');
-        if (res.ok) {
-          const data = await res.json();
+        const data = await api.getTeams();
+        if (data) {
           setTeams(data);
         }
       } catch (err) {

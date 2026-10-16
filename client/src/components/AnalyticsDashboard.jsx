@@ -13,15 +13,16 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 
+import api from '../services/api';
+
 export default function AnalyticsDashboard({ onSelectTicket }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchAnalytics = async () => {
     try {
-      const res = await fetch('/api/analytics/dashboard');
-      if (res.ok) {
-        const json = await res.json();
+      const json = await api.getAnalytics();
+      if (json) {
         setData(json);
       }
     } catch (err) {

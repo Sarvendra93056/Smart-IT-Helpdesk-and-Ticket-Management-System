@@ -7,6 +7,7 @@ import AnalyticsDashboard from './components/AnalyticsDashboard';
 import TeamsView from './components/TeamsView';
 import KnowledgeBaseView from './components/KnowledgeBaseView';
 import LoginPage from './components/LoginPage';
+import api from './services/api';
 import { CheckCircle2, LogIn } from 'lucide-react';
 
 export default function App() {
@@ -29,9 +30,8 @@ export default function App() {
   // Fetch users for persona switcher & login
   const fetchUsers = async () => {
     try {
-      const res = await fetch('/api/auth/users');
-      if (res.ok) {
-        const users = await res.json();
+      const users = await api.getUsers();
+      if (users && users.length > 0) {
         setAllUsers(users);
 
         // Check if user was previously saved in localStorage
@@ -48,7 +48,7 @@ export default function App() {
         }
 
         // Default initial session: Marcus Vance (IT Admin)
-        if (!currentUser && users.length > 0) {
+        if (!currentUser) {
           const defaultUser = users.find(u => u.role === 'admin') || users[0];
           setCurrentUser(defaultUser);
         }
@@ -61,9 +61,8 @@ export default function App() {
   // Fetch all tickets with SLA status
   const fetchTickets = async () => {
     try {
-      const res = await fetch('/api/tickets');
-      if (res.ok) {
-        const data = await res.json();
+      const data = await api.getTickets();
+      if (data) {
         setTickets(data);
       }
     } catch (err) {
@@ -74,9 +73,8 @@ export default function App() {
   // Fetch teams
   const fetchTeams = async () => {
     try {
-      const res = await fetch('/api/teams');
-      if (res.ok) {
-        const data = await res.json();
+      const data = await api.getTeams();
+      if (data) {
         setTeams(data);
       }
     } catch (err) {
@@ -118,15 +116,8 @@ export default function App() {
   // Switch demo persona from navbar dropdown
   const handleSwitchUser = async (userId) => {
     try {
-      const res = await fetch('/api/auth/switch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        handleLoginSuccess(data.user, data.token);
-      }
+      const data = await api.switchUser(userId);
+      handleLoginSuccess(data.user, data.token);
     } catch (err) {
       console.error('Failed to switch user:', err);
     }

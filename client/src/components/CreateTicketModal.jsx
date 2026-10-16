@@ -12,6 +12,8 @@ import {
   ThumbsUp
 } from 'lucide-react';
 
+import api from '../services/api';
+
 export default function CreateTicketModal({ currentUser, onClose, onCreated }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -39,13 +41,8 @@ export default function CreateTicketModal({ currentUser, onClose, onCreated }) {
       setAiLoading(true);
       debounceTimerRef.current = setTimeout(async () => {
         try {
-          const res = await fetch('/api/ai/classify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, description })
-          });
-          if (res.ok) {
-            const data = await res.json();
+          const data = await api.classifyAI(title, description);
+          if (data) {
             setAiAnalysis(data);
             if (!category) {
               setCategory(data.category);
@@ -81,29 +78,19 @@ export default function CreateTicketModal({ currentUser, onClose, onCreated }) {
     setError('');
 
     try {
-      const res = await fetch('/api/tickets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: title.trim(),
-          description: description.trim(),
-          category: category || 'software',
-          priority: priority || 'P3 - Medium',
-          created_by_id: currentUser.id,
-          device_tag: deviceTag,
-          location
-        })
+      const createdTicket = await api.createTicket({
+        title: title.trim(),
+        description: description.trim(),
+        category: category || 'software',
+        priority: priority || 'P3 - Medium',
+        created_by_id: currentUser.id,
+        device_tag: deviceTag,
+        location
       });
 
-      if (res.ok) {
-        const createdTicket = await res.json();
-        onCreated(createdTicket);
-      } else {
-        const data = await res.json();
-        setError(data.error || 'Failed to create ticket');
-      }
+      onCreated(createdTicket);
     } catch (err) {
-      setError('Network error creating ticket: ' + err.message);
+      setError('Error creating ticket: ' + err.message);
     } finally {
       setSubmitting(false);
     }

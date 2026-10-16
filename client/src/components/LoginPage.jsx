@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Ticket, 
   Lock, 
@@ -12,13 +12,26 @@ import {
   CheckCircle2,
   UserCheck
 } from 'lucide-react';
+import api from '../services/api';
+import { initialUsers } from '../services/mockData';
 
-export default function LoginPage({ allUsers, onLoginSuccess, onCancel }) {
+export default function LoginPage({ allUsers: passedUsers, onLoginSuccess, onCancel }) {
   const [email, setEmail] = useState('admin@enterprise.corp');
   const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [usersList, setUsersList] = useState(passedUsers && passedUsers.length > 0 ? passedUsers : initialUsers);
+
+  useEffect(() => {
+    if (passedUsers && passedUsers.length > 0) {
+      setUsersList(passedUsers);
+    } else {
+      api.getUsers().then(users => {
+        if (users && users.length > 0) setUsersList(users);
+      });
+    }
+  }, [passedUsers]);
 
   // Handle standard email/password login
   const handleLogin = async (e) => {
@@ -32,43 +45,30 @@ export default function LoginPage({ allUsers, onLoginSuccess, onCancel }) {
     setError('');
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), password: password.trim() })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        onLoginSuccess(data.user, data.token);
-      } else {
-        const errData = await res.json();
-        setError(errData.error || 'Invalid credentials. Default password is password123');
-      }
+      const data = await api.login(email.trim(), password.trim());
+      onLoginSuccess(data.user, data.token);
     } catch (err) {
-      setError('Network connection error: ' + err.message);
+      setError(err.message || 'Invalid credentials. Default password is password123');
     } finally {
       setLoading(false);
     }
   };
 
   // Quick 1-click demo login
-  const handleQuickLogin = (user) => {
+  const handleQuickLogin = async (user) => {
     setEmail(user.email);
     setPassword('password123');
-    // Direct switch
-    fetch('/api/auth/switch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: user.id })
-    })
-      .then(res => res.json())
-      .then(data => {
-        onLoginSuccess(data.user, data.token);
-      })
-      .catch(err => {
-        setError('Failed to switch persona: ' + err.message);
-      });
+    setLoading(true);
+    setError('');
+
+    try {
+      const data = await api.switchUser(user.id);
+      onLoginSuccess(data.user, data.token);
+    } catch (err) {
+      setError('Failed to switch persona: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -173,7 +173,7 @@ export default function LoginPage({ allUsers, onLoginSuccess, onCancel }) {
               Instant access as an IT persona to test different workflows:
             </p>
             <div className="demo-personas-grid">
-              {allUsers.slice(0, 5).map(u => (
+              {usersList.slice(0, 5).map(u => (
                 <button
                   key={u.id}
                   type="button"
