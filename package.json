@@ -8,7 +8,7 @@
     "dev": "concurrently -n \"SERVER,CLIENT\" -c \"blue,magenta\" \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
-    "build": "npm run build --prefix client"
+    "build": "npm run build --prefix client && (cp -r client/dist ./dist 2>/dev/null || true)"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
