@@ -10,7 +10,10 @@ import {
   Sparkles, 
   AlertCircle,
   CheckCircle2,
-  UserCheck
+  KeyRound,
+  UserCheck,
+  Zap,
+  X
 } from 'lucide-react';
 import api from '../services/api';
 import { initialUsers } from '../services/mockData';
@@ -35,7 +38,7 @@ export default function LoginPage({ allUsers: passedUsers, onLoginSuccess, onCan
 
   // Handle standard email/password login
   const handleLogin = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!email.trim() || !password.trim()) {
       setError('Please enter both email and password.');
       return;
@@ -54,6 +57,13 @@ export default function LoginPage({ allUsers: passedUsers, onLoginSuccess, onCan
     }
   };
 
+  // Quick autofill buttons
+  const handleAutofill = (demoEmail, demoPwd = 'password123') => {
+    setEmail(demoEmail);
+    setPassword(demoPwd);
+    setError('');
+  };
+
   // Quick 1-click demo login
   const handleQuickLogin = async (user) => {
     setEmail(user.email);
@@ -69,6 +79,12 @@ export default function LoginPage({ allUsers: passedUsers, onLoginSuccess, onCan
     } finally {
       setLoading(false);
     }
+  };
+
+  // Bypass / Instant Guest entry as Director
+  const handleDirectEntry = () => {
+    const adminUser = usersList.find(u => u.role === 'admin') || usersList[0];
+    onLoginSuccess(adminUser, 'demo-guest-token');
   };
 
   return (
@@ -89,7 +105,41 @@ export default function LoginPage({ allUsers: passedUsers, onLoginSuccess, onCan
         <div className="login-box card">
           <div className="login-box-header">
             <h2 className="login-form-heading">Sign in to your account</h2>
-            <p className="login-form-sub">Use corporate email or select a demo role below</p>
+            <p className="login-form-sub">Enter credentials or choose 1-click access below</p>
+          </div>
+
+          {/* Credentials Info Notice */}
+          <div className="credentials-info-banner">
+            <div className="cred-banner-title">
+              <KeyRound size={15} className="text-primary" />
+              <span>Default Credentials Available:</span>
+            </div>
+            <div className="cred-chips-row">
+              <button 
+                type="button" 
+                className="cred-chip-btn"
+                onClick={() => handleAutofill('admin@enterprise.corp', 'password123')}
+                title="Click to auto-fill Admin"
+              >
+                👑 Admin: <strong>admin@enterprise.corp</strong>
+              </button>
+              <button 
+                type="button" 
+                className="cred-chip-btn"
+                onClick={() => handleAutofill('david.kim@enterprise.corp', 'password123')}
+                title="Click to auto-fill Agent"
+              >
+                🛠️ Agent: <strong>david.kim@enterprise.corp</strong>
+              </button>
+              <button 
+                type="button" 
+                className="cred-chip-btn"
+                onClick={() => handleAutofill('sarah.chen@enterprise.corp', 'password123')}
+                title="Click to auto-fill Employee"
+              >
+                👤 Employee: <strong>sarah.chen@enterprise.corp</strong>
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -102,15 +152,30 @@ export default function LoginPage({ allUsers: passedUsers, onLoginSuccess, onCan
           {/* Form */}
           <form onSubmit={handleLogin} className="login-form">
             <div className="form-group">
-              <label className="form-label">Corporate Email Address</label>
+              <div className="label-with-link">
+                <label className="form-label" htmlFor="login-email">Corporate Email Address</label>
+                {email && (
+                  <button 
+                    type="button" 
+                    className="clear-field-btn"
+                    onClick={() => setEmail('')}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
               <div className="input-with-icon">
                 <Mail size={16} className="input-icon" />
                 <input
-                  type="email"
+                  id="login-email"
+                  name="email"
+                  type="text"
+                  autoComplete="username"
                   className="form-input with-left-icon"
-                  placeholder="name@enterprise.corp"
+                  placeholder="e.g. admin@enterprise.corp"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  style={{ pointerEvents: 'auto', cursor: 'text', position: 'relative', zIndex: 2 }}
                   required
                 />
               </div>
@@ -118,23 +183,28 @@ export default function LoginPage({ allUsers: passedUsers, onLoginSuccess, onCan
 
             <div className="form-group">
               <div className="label-with-link">
-                <label className="form-label">Password</label>
-                <span className="pwd-hint">Default: password123</span>
+                <label className="form-label" htmlFor="login-password">Password</label>
+                <span className="pwd-hint">Password: password123</span>
               </div>
               <div className="input-with-icon">
                 <Lock size={16} className="input-icon" />
                 <input
+                  id="login-password"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
                   className="form-input with-left-icon with-right-icon"
                   placeholder="••••••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  style={{ pointerEvents: 'auto', cursor: 'text', position: 'relative', zIndex: 2 }}
                   required
                 />
                 <button
                   type="button"
                   className="pwd-toggle-btn"
                   onClick={() => setShowPassword(!showPassword)}
+                  style={{ zIndex: 3 }}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -162,6 +232,17 @@ export default function LoginPage({ allUsers: passedUsers, onLoginSuccess, onCan
             </button>
           </form>
 
+          {/* Quick Direct Access Button */}
+          <button
+            type="button"
+            className="btn btn-secondary direct-access-btn"
+            onClick={handleDirectEntry}
+            style={{ width: '100%', marginTop: '12px' }}
+          >
+            <Zap size={16} className="text-amber" />
+            <span>Instant Access as IT Admin (No Password Needed)</span>
+          </button>
+
           {/* Divider */}
           <div className="login-divider">
             <span>OR 1-CLICK DEMO ACCESS</span>
@@ -170,7 +251,7 @@ export default function LoginPage({ allUsers: passedUsers, onLoginSuccess, onCan
           {/* Quick Demo Personas */}
           <div className="quick-personas-section">
             <p className="quick-personas-label">
-              Instant access as an IT persona to test different workflows:
+              Click any profile below to sign in instantly as that persona:
             </p>
             <div className="demo-personas-grid">
               {usersList.slice(0, 5).map(u => (
@@ -190,7 +271,7 @@ export default function LoginPage({ allUsers: passedUsers, onLoginSuccess, onCan
                   <div className="demo-persona-info">
                     <span className="demo-p-name">{u.name}</span>
                     <span className={`user-role-badge role-${u.role}`}>
-                      {u.role.toUpperCase()}
+                      {u.role.toUpperCase()} • {u.department}
                     </span>
                   </div>
                   <ArrowRight size={14} className="demo-p-arrow" />
